@@ -8,11 +8,17 @@ import { GROUP_MEMBERS, INITIAL_CITIZEN_RESPONSES, BUDGET_METADATA } from './dat
 export default function App() {
   const [currentTab, setCurrentTab] = useState('budget'); // 'budget' or 'consultation'
 
-  // Responses state persisted in localStorage
+  // Responses state persisted in localStorage (seeds 10 natural responses)
   const [responses, setResponses] = useState(() => {
     try {
       const saved = localStorage.getItem('UGANDA_BUDGET_GROUP_80T_RESPONSES');
-      return saved ? JSON.parse(saved) : INITIAL_CITIZEN_RESPONSES;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return INITIAL_CITIZEN_RESPONSES;
     } catch {
       return INITIAL_CITIZEN_RESPONSES;
     }

@@ -43,6 +43,34 @@ export default function BudgetOverview({ onGoToConsultation }) {
     color: item.color
   }));
 
+  // Clean, high-contrast readable tooltip
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-slate-900 border border-slate-700 p-3 rounded-xl shadow-xl text-white text-xs max-w-xs z-50">
+          <p className="font-bold text-white text-xs leading-snug">{data.fullName}</p>
+          <div className="flex items-center space-x-2 pt-1.5">
+            <span 
+              className="w-2.5 h-2.5 rounded-full shrink-0" 
+              style={{ backgroundColor: data.color }} 
+            />
+            <span className="font-bold text-amber-400">
+              UGX {data.amountTn.toFixed(2)} Trillion
+            </span>
+            <span className="text-slate-300 font-medium">
+              ({data.sharePercent}%)
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 pt-0.5">
+            {data.amountBn.toLocaleString()} Billion UGX
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6">
       
@@ -145,13 +173,7 @@ export default function BudgetOverview({ onGoToConsultation }) {
                   tick={{ fontSize: 11, fill: '#64748b' }} 
                   unit="T"
                 />
-                <Tooltip 
-                  formatter={(val, name, props) => [
-                    `UGX ${val} Trillion (${props.payload.sharePercent}%)`,
-                    props.payload.fullName
-                  ]}
-                  contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px', fontSize: '12px' }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="amountTn" radius={[4, 4, 0, 0]}>
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -173,13 +195,7 @@ export default function BudgetOverview({ onGoToConsultation }) {
                     <Cell key={`cell-pie-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(val, name, props) => [
-                    `UGX ${val}T (${props.payload.sharePercent}%)`,
-                    props.payload.fullName
-                  ]}
-                  contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px', fontSize: '12px' }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend 
                   wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                 />
