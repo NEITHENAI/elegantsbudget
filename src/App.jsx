@@ -9,6 +9,7 @@ import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firesto
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('budget'); // 'budget' or 'consultation'
+  const [isAdmin, setIsAdmin] = useState(false); // Secret admin mode unlocked via Akot Joyce (Hudsonhornet1$)
 
   // Responses state (seeds 10 natural responses, synchronizes with Firestore)
   const [responses, setResponses] = useState(() => {
@@ -105,6 +106,8 @@ export default function App() {
           currentTab={currentTab}
           setCurrentTab={setCurrentTab}
           responsesCount={responses.length}
+          isAdmin={isAdmin}
+          setIsAdmin={setIsAdmin}
         />
 
         <PermanentKpiBar 
@@ -123,6 +126,7 @@ export default function App() {
               responses={responses}
               onAddResponse={handleAddResponse}
               onDeleteResponse={handleDeleteResponse}
+              isAdmin={isAdmin}
             />
           )}
         </main>

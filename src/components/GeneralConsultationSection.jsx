@@ -16,7 +16,8 @@ import {
 export default function GeneralConsultationSection({ 
   responses, 
   onAddResponse, 
-  onDeleteResponse 
+  onDeleteResponse,
+  isAdmin
 }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Citizen / Taxpayer');
@@ -280,13 +281,15 @@ export default function GeneralConsultationSection({
                       <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-800">
                         {item.stance}
                       </span>
-                      <button
-                        onClick={() => onDeleteResponse(item.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 rounded-md hover:bg-rose-50 transition-colors"
-                        title="Delete response"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => onDeleteResponse(item.id)}
+                          className="text-rose-500 hover:text-rose-700 p-1 rounded-md hover:bg-rose-50 transition-colors"
+                          title="Delete response (Admin)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
