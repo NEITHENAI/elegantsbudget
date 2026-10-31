@@ -4,11 +4,13 @@ import PermanentKpiBar from './components/PermanentKpiBar';
 import BudgetOverview from './components/BudgetOverview';
 import GeneralConsultationSection from './components/GeneralConsultationSection';
 import { GROUP_MEMBERS, INITIAL_CITIZEN_RESPONSES, BUDGET_METADATA } from './data/budgetData';
+import { db } from './firebase';
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('budget'); // 'budget' or 'consultation'
 
-  // Responses state persisted in localStorage (seeds 10 natural responses)
+  // Responses state (seeds 10 natural responses, synchronizes with Firestore)
   const [responses, setResponses] = useState(() => {
     try {
       const saved = localStorage.getItem('UGANDA_BUDGET_GROUP_80T_RESPONSES');
@@ -24,6 +26,44 @@ export default function App() {
     }
   });
 
+  // Real-time synchronization with separate Firestore collection: 'group2_responses'
+  useEffect(() => {
+    let unsubscribe;
+    try {
+      const group2Col = collection(db, 'group2_responses');
+      unsubscribe = onSnapshot(group2Col, (snapshot) => {
+        if (!snapshot.empty) {
+          const remoteList = snapshot.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+          }));
+          // Sort newest first
+          remoteList.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+          setResponses(remoteList);
+          try {
+            localStorage.setItem('UGANDA_BUDGET_GROUP_80T_RESPONSES', JSON.stringify(remoteList));
+          } catch (e) {
+            console.error('Cache save error:', e);
+          }
+        } else {
+          // If Firestore collection is empty, seed it with the 10 natural responses
+          INITIAL_CITIZEN_RESPONSES.forEach((item) => {
+            setDoc(doc(db, 'group2_responses', item.id), item).catch(() => {});
+          });
+        }
+      }, (err) => {
+        console.warn('Firestore live listener notice (using local storage fallback):', err.message);
+      });
+    } catch (err) {
+      console.warn('Firestore init notice:', err);
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Save to localStorage as offline fail-safe
   useEffect(() => {
     try {
       localStorage.setItem('UGANDA_BUDGET_GROUP_80T_RESPONSES', JSON.stringify(responses));
@@ -32,12 +72,28 @@ export default function App() {
     }
   }, [responses]);
 
-  const handleAddResponse = (newResponse) => {
-    setResponses(prev => [newResponse, ...prev]);
+  const handleAddResponse = async (newResponse) => {
+    // 1. Immediately update local UI
+    setResponses(prev => [newResponse, ...prev.filter(r => r.id !== newResponse.id)]);
+
+    // 2. Persist to Firestore in separate 'group2_responses' collection
+    try {
+      await setDoc(doc(db, 'group2_responses', newResponse.id), newResponse);
+    } catch (err) {
+      console.warn('Could not write to Firestore (saved locally in browser):', err.message);
+    }
   };
 
-  const handleDeleteResponse = (id) => {
+  const handleDeleteResponse = async (id) => {
+    // 1. Immediately remove from local state
     setResponses(prev => prev.filter(r => r.id !== id));
+
+    // 2. Delete from Firestore
+    try {
+      await deleteDoc(doc(db, 'group2_responses', id));
+    } catch (err) {
+      console.warn('Could not delete from Firestore:', err.message);
+    }
   };
 
   return (
